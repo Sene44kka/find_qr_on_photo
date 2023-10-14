@@ -5,13 +5,12 @@ import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
 import com.google.zxing.LuminanceSource
 import com.google.zxing.MultiFormatReader
+import com.google.zxing.NotFoundException
+import com.google.zxing.ReaderException
 import com.google.zxing.Result
-import com.google.zxing.ResultPoint
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource
-import com.google.zxing.common.BitMatrix
-import com.google.zxing.common.DetectorResult
 import com.google.zxing.common.HybridBinarizer
-import com.google.zxing.qrcode.detector.Detector
+import ru.skripov.modules.excel.ExcelReader
 
 import javax.imageio.ImageIO
 import java.awt.image.BufferedImage
@@ -19,12 +18,15 @@ import java.nio.charset.StandardCharsets
 
 static void main(String[] args) {
 
-    List<String> urlList = [
-            "https://goods-photos.static1-sima-land.com/items/4292528/0/700.jpg?v=1661777599",
-            "https://goods-photos.static1-sima-land.com/items/448821/3/1600.jpg?v=1665737046",
-            "https://goods-photos.static1-sima-land.com/items/3904631/0/1600.jpg?v=1657021724",
-            "https://amegaprint.ru/upload/medialibrary/ac0/ac05a6353ac7599f3787c34aa9bff668.jpg"
-    ]
+    List<String> urlList = []
+    ExcelReader excelReader = new ExcelReader("/home/skripov/git/myProjects/find_qr_on_photo/urls.xls")
+
+    excelReader.eachLine {
+        int cellSize = (it.cells - null).size()
+        for (int i = 0; i < cellSize; i++) {
+            urlList.add(excelReader.cell(i).toString())
+        }
+    }
 
     for (url in urlList) {
         URL imageURL = new URL(url)
@@ -46,8 +48,10 @@ static void main(String[] args) {
         try {
             Result result = multiFormatReader.decode(bitmap, hints)
             println "url $url"
-        } catch (Exception e) {
+        } catch (NotFoundException ignored) {
             println "Ничего нет на картинке"
+        } catch (ReaderException ignored) {
+            println "Не смог понять есть ли qr код для данной картинки - $url"
         }
     }
 }
