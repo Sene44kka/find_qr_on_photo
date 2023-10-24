@@ -33,6 +33,4 @@ static void main(String[] args) {
             }
         }
     }
-
-    qrCodes.close()
 }
