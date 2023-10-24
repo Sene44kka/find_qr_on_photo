@@ -3,6 +3,7 @@ package ru.skripov.modules.qr_codes
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
+import com.google.zxing.EncodeHintType
 import com.google.zxing.LuminanceSource
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.NotFoundException
@@ -10,20 +11,27 @@ import com.google.zxing.ReaderException
 import com.google.zxing.Result
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource
 import com.google.zxing.common.HybridBinarizer
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 
 import javax.imageio.ImageIO
-import java.awt.image.BufferedImage
 import java.nio.charset.StandardCharsets
 
 class QrCodes {
     MultiFormatReader multiFormatReader = new MultiFormatReader()
-    ByteArrayOutputStream baos
     Map<DecodeHintType, Object> hints = new HashMap()
 
     QrCodes() {
         hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE)
-        hints.put(DecodeHintType.POSSIBLE_FORMATS, Arrays.asList(BarcodeFormat.QR_CODE))
+        hints.put(DecodeHintType.POSSIBLE_FORMATS, Arrays.asList(
+                BarcodeFormat.QR_CODE,
+                BarcodeFormat.AZTEC,
+                BarcodeFormat.DATA_MATRIX,
+                BarcodeFormat.MAXICODE,
+                BarcodeFormat.PDF_417
+        ))
         hints.put(DecodeHintType.CHARACTER_SET, StandardCharsets.UTF_8.name())
+        hints.put(DecodeHintType.ALSO_INVERTED, Boolean.TRUE)
+        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L)
         multiFormatReader.setHints(hints)
     }
 
@@ -33,13 +41,12 @@ class QrCodes {
             imageURL = new URL(url)
         } catch (Exception e) {
             println "error url: $url"
+            return
         }
-        BufferedImage originalImage = ImageIO.read(imageURL)
-        baos = new ByteArrayOutputStream()
-        ImageIO.write(originalImage, "jpg", baos)
 
-        LuminanceSource source = new BufferedImageLuminanceSource(originalImage)
-        BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source))
+        BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(
+                new BufferedImageLuminanceSource(
+                        ImageIO.read(imageURL))));
 
         try {
             Result result = multiFormatReader.decode(bitmap, hints)
@@ -50,9 +57,5 @@ class QrCodes {
         }
 
         return url
-    }
-
-    void close() {
-        baos.close()
     }
 }
